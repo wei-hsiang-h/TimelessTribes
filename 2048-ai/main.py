@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# 允許跨域請求
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,7 +15,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 載入 nneonneo 編譯好的 C++ 函式庫，路徑改為 ai_core
 lib_path = os.path.join(os.path.dirname(__file__), 'ai_core', '2048.so')
 if os.path.exists(lib_path):
     lib = ctypes.CDLL(lib_path)
@@ -45,6 +43,16 @@ def board_to_int64(board_array):
 def get_best_move(state: BoardState):
     if not lib:
         return {"error": "AI 核心尚未載入"}
+    
+    # === 自訂規則：防止 2048 互相合成 ===
+    seen_2048_count = 0
+    for r in range(4):
+        for c in range(4):
+            if state.board[r][c] == 2048:
+                if seen_2048_count > 0:
+                    # 將多餘的 2048 提升為 4096, 8192... 變為不可跨越的障礙物
+                    state.board[r][c] = 2048 * (2 ** seen_2048_count)
+                seen_2048_count += 1
     
     board_int64 = board_to_int64(state.board)
     move_code = lib.find_best_move(board_int64)

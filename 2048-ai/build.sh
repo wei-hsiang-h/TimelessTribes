@@ -8,7 +8,7 @@ if [ ! -d "ai_core" ]; then
   git clone https://github.com/nneonneo/2048-ai.git ai_core
 fi
 
-# 3. 進入資料夾並編譯 C++ 程式碼 (產出 2048.so)
+# 3. 進入資料夾並編譯 C++ 程式碼 (直接用 g++ 編譯)
 cd ai_core
 g++ -O3 -shared -fPIC 2048.cpp -o 2048.so
 cd ..
