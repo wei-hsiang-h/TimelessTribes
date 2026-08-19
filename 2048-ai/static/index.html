@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048 AI 魔幻飲料店專用</title>
+    <title>2048 AI 自訂盤面解析器</title>
     <style>
         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #faf8ef; }
         .grid { display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; background-color: #bbada0; padding: 10px; border-radius: 5px; margin: 20px 0; }
@@ -12,17 +12,18 @@
         button { padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #8f7a66; color: white; border: none; border-radius: 5px; font-weight: bold; }
         button:hover { background-color: #9f8b77; }
         #result { margin-top: 20px; font-size: 24px; font-weight: bold; color: #f67c5f; }
+        .note { color: #776e65; margin-bottom: 10px; line-height: 1.5; text-align: center; }
     </style>
 </head>
 <body>
-    <h1>2048 AI 最佳解 - 魔幻飲料店專用</h1>
-    <p>請在下方輸入目前的盤面數字（空格請填 0）：</p>
+    <h1>2048 AI 最佳解</h1>
+    <p class="note">請在下方輸入目前的盤面「次方數」（空格請填 0）<br>例如：1 代表 2, 2 代表 4, 10 代表 1024</p>
     
     <div class="grid" id="board">
-        <!-- 產生 16 個輸入框 -->
+        <!-- 產生 16 個輸入框，step 改為 1 -->
         <script>
             for(let i=0; i<16; i++) {
-                document.write(`<input type="number" id="cell-${i}" value="0" min="0" step="2">`);
+                document.write(`<input type="number" id="cell-${i}" value="0" min="0" step="1">`);
             }
         </script>
     </div>
@@ -34,13 +35,14 @@
         async function askAI() {
             document.getElementById("result").innerText = "計算中...";
             
-            // 將網頁上的 16 個格子轉成 4x4 陣列
+            // 將網頁上的 16 個格子轉成 4x4 陣列，並將次方還原為實數
             let boardArray = [];
             for (let r = 0; r < 4; r++) {
                 let row = [];
                 for (let c = 0; c < 4; c++) {
-                    let val = parseInt(document.getElementById(`cell-${r*4+c}`).value) || 0;
-                    row.push(val);
+                    let power = parseInt(document.getElementById(`cell-${r*4+c}`).value) || 0;
+                    let realValue = (power === 0) ? 0 : Math.pow(2, power);
+                    row.push(realValue);
                 }
                 boardArray.push(row);
             }
