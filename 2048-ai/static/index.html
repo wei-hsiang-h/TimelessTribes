@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 AI 自訂盤面解析器</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #faf8ef; }
+        .grid { display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; background-color: #bbada0; padding: 10px; border-radius: 5px; margin: 20px 0; }
+        .grid input { width: 80px; height: 80px; text-align: center; font-size: 24px; font-weight: bold; border: none; border-radius: 3px; background-color: #cdc1b4; color: #776e65; }
+        .grid input:focus { outline: 3px solid #f67c5f; }
+        button { padding: 10px 20px; font-size: 18px; cursor: pointer; background-color: #8f7a66; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button:hover { background-color: #9f8b77; }
+        #result { margin-top: 20px; font-size: 24px; font-weight: bold; color: #f67c5f; }
+    </style>
+</head>
+<body>
+    <h1>2048 AI 最佳解</h1>
+    <p>請在下方輸入目前的盤面數字（空格請填 0）：</p>
+    
+    <div class="grid" id="board">
+        <!-- 產生 16 個輸入框 -->
+        <script>
+            for(let i=0; i<16; i++) {
+                document.write(`<input type="number" id="cell-${i}" value="0" min="0" step="2">`);
+            }
+        </script>
+    </div>
+
+    <button onclick="askAI()">請求 AI 最佳解</button>
+    <div id="result">等待計算...</div>
+
+    <script>
+        async function askAI() {
+            document.getElementById("result").innerText = "計算中...";
+            
+            // 將網頁上的 16 個格子轉成 4x4 陣列
+            let boardArray = [];
+            for (let r = 0; r < 4; r++) {
+                let row = [];
+                for (let c = 0; c < 4; c++) {
+                    let val = parseInt(document.getElementById(`cell-${r*4+c}`).value) || 0;
+                    row.push(val);
+                }
+                boardArray.push(row);
+            }
+
+            try {
+                // 發送請求給後端 FastAPI
+                const response = await fetch("/api/get_best_move", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ board: boardArray })
+                });
+                
+                const data = await response.json();
+                if(data.error) {
+                    document.getElementById("result").innerText = "錯誤: " + data.error;
+                } else {
+                    document.getElementById("result").innerText = "AI 建議方向：" + data.best_move;
+                }
+            } catch (error) {
+                document.getElementById("result").innerText = "連線失敗，請檢查伺服器狀態。";
+            }
+        }
+    </script>
+</body>
+</html>
