@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 AI 專屬輔助</title>
+    <title>2048 AI - 魔幻飲料店專用</title>
     <style>
         body { 
             margin: 0; 
@@ -26,21 +26,21 @@
             align-items: center;
         }
 
-        /* 👉 專屬標題：放大框、放大字體、位置往上與往右修正 */
+        /* 專屬標題 */
         .custom-title {
             position: absolute;
-            top: 125px;     /* 大幅往上移，對準原版黑框高度 */
-            right: 0px;     /* 貼齊右側 */
-            width: 280px;   /* 框變寬，確保完全遮擋底字 */
-            height: 50px;   /* 框變高 */
+            top: 125px;     
+            right: 0px;     
+            width: 280px;   
+            height: 50px;   
             background-color: #2b2537; 
             color: #ffe6a0; 
-            font-size: 22px; /* 字體放大 */
+            font-size: 22px; 
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px 0 0 8px; /* 讓左邊圓角，右邊貼平邊緣更自然 */
+            border-radius: 8px 0 0 8px; 
             z-index: 20;
             letter-spacing: 1px;
             box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); 
@@ -73,7 +73,6 @@
             color: #ffffff; 
             text-shadow: 2px 2px 3px black, -1px -1px 2px black; 
             
-            /* 防箭頭遮擋 */
             background-size: 70% 70%; 
             background-repeat: no-repeat;
             background-position: center left 15%; 
@@ -86,7 +85,7 @@
             background-color: rgba(40, 10, 10, 0.9); 
         }
         
-        /* 保留上下箭頭供點擊加減 */
+        /* 保留上下箭頭 */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             opacity: 1; 
@@ -103,6 +102,7 @@
             width: 100%;
             z-index: 10;
         }
+        
         button { 
             padding: 12px 30px; 
             font-size: 20px; 
@@ -113,15 +113,36 @@
             border-radius: 25px; 
             font-weight: bold; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 10px; /* 跟下方的結果框拉開一點距離 */
         }
-        button:hover { background-color: #b04848; }
-        #result { margin-top: 15px; font-size: 28px; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px #000; }
+        
+        button:hover { 
+            background-color: #b04848; 
+        }
+        
+        /* 👉 幫 AI 結果加上深色底框，讓字體超清晰 */
+        #result { 
+            margin-top: 10px; 
+            font-size: 26px; 
+            font-weight: bold; 
+            color: #fff; 
+            text-shadow: 2px 2px 4px #000; 
+            background-color: rgba(43, 37, 55, 0.95); /* 深紫色半透明底，跟標題呼應 */
+            padding: 10px 30px; /* 增加內邊距讓框變大 */
+            border-radius: 25px; /* 圓角藥丸形狀 */
+            border: 2px solid #ffcc00; /* 加上金色邊框看起來更像遊戲提示 */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6); /* 立體陰影 */
+        }
+
+        /* 當沒有文字內容時，自動隱藏底框 */
+        #result:empty {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="phone-screen">
         
-        <!-- 專屬標題 -->
         <div class="custom-title">2048 AI - 魔幻飲料店專用</div>
 
         <div class="grid" id="board">
@@ -135,7 +156,6 @@
                     }
                 }
 
-                // 產生 16 個格子
                 for(let i=0; i<16; i++) {
                     document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">`);
                 }
@@ -143,7 +163,7 @@
         </div>
 
         <div class="controls">
-            <button onclick="askAI()">AI 最佳解</button>
+            <button onclick="askAI()">請求 AI 最佳解</button>
             <div id="result"></div>
         </div>
     </div>
