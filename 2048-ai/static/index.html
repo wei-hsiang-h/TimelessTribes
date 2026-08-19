@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2048 AI - 魔幻飲料店專用</title>
-
+    <title>2048 AI 專屬輔助</title>
     <style>
         body { 
             margin: 0; 
@@ -27,26 +26,38 @@
             align-items: center;
         }
 
-        /* 👉 新增：在中間擋住原本遊戲圖片文字的遮罩 (你可以微調 top 和 height 來對準那行字) */
-        .text-cover {
+        /* 👉 專屬標題：放大框、放大字體、位置往上與往右修正 */
+        .custom-title {
             position: absolute;
-            top: 500px; /* 遮罩位置 */
-            width: 88%;
-            height: 50px; /* 遮罩高度 */
-            background-color: #532222; /* 配合背景底色遮蓋，或改為 transparent */
-            z-index: 5;
-            pointer-events: none; /* 讓滑鼠可以穿透遮罩直接點擊後方的格子 */
-            opacity: 0.8; /* 調整透明度讓它融進背景 */
+            top: 125px;     /* 大幅往上移，對準原版黑框高度 */
+            right: 0px;     /* 貼齊右側 */
+            width: 280px;   /* 框變寬，確保完全遮擋底字 */
+            height: 50px;   /* 框變高 */
+            background-color: #2b2537; 
+            color: #ffe6a0; 
+            font-size: 22px; /* 字體放大 */
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px 0 0 8px; /* 讓左邊圓角，右邊貼平邊緣更自然 */
+            z-index: 20;
+            letter-spacing: 1px;
+            box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); 
         }
 
+        /* 遮住網格背後原本文字的區塊與大外框底色 */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             gap: 2px; 
-            width: 88%; 
-            background-color: transparent; 
-            margin-top: 260px; 
-            z-index: 10; /* 確保格子在遮罩上方 */
+            width: 86%; 
+            background-color: #4c2222; 
+            padding: 4px; 
+            border-radius: 6px; 
+            margin-top: 310px; 
+            z-index: 10; 
+            box-sizing: border-box;
         }
 
         .grid input { 
@@ -55,29 +66,37 @@
             text-align: center; 
             font-size: 24px; 
             font-weight: bold; 
-            border: none; 
-            background-color: transparent; /* 保持全透明，露出底圖 */
-            color: #fff; 
-            text-shadow: 1px 1px 2px black; 
-            background-size: cover; 
-            background-position: center;
-            cursor: pointer; /* 游標變成手指，提示可以點擊 */
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 4px;
+            background-color: rgba(90, 35, 35, 0.5); 
+            
+            color: #ffffff; 
+            text-shadow: 2px 2px 3px black, -1px -1px 2px black; 
+            
+            /* 防箭頭遮擋 */
+            background-size: 70% 70%; 
+            background-repeat: no-repeat;
+            background-position: center left 15%; 
+            padding-right: 15px; 
+            box-sizing: border-box;
         }
         
-        .grid input:focus { outline: 2px solid #ffcc00; }
+        .grid input:focus { 
+            outline: 2px solid #ffcc00; 
+            background-color: rgba(40, 10, 10, 0.9); 
+        }
         
+        /* 保留上下箭頭供點擊加減 */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-        input[type=number] {
-            -moz-appearance: textfield; 
+            opacity: 1; 
+            height: 30px;
+            cursor: pointer;
         }
         
         .controls {
             margin-top: auto; 
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -101,40 +120,30 @@
 </head>
 <body>
     <div class="phone-screen">
-        <!-- 遮住背景原本文字的區塊 -->
-        <div class="text-cover"></div>
+        
+        <!-- 專屬標題 -->
+        <div class="custom-title">2048 AI - 魔幻飲料店專用</div>
 
         <div class="grid" id="board">
             <script>
                 function updateImage(inputElement) {
                     let val = parseInt(inputElement.value) || 0;
-                    if (val > 0) {
+                    if (val >= 1 && val <= 11) {
                         inputElement.style.backgroundImage = `url('images/${val}.png')`;
-                        inputElement.style.color = "transparent"; 
-                        inputElement.style.textShadow = "none"; 
                     } else {
                         inputElement.style.backgroundImage = "none";
-                        inputElement.style.color = "#fff"; 
-                        inputElement.style.textShadow = "1px 1px 2px black"; 
                     }
                 }
 
-                // 產生 16 個格子，並加入點擊自動加 1 的功能 (0 -> 1 -> 2 ... -> 11 -> 0)
+                // 產生 16 個格子
                 for(let i=0; i<16; i++) {
-                    document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)" onclick="incrementCell(this)">`);
-                }
-
-                function incrementCell(inputElement) {
-                    let currentVal = parseInt(inputElement.value) || 0;
-                    currentVal = (currentVal + 1) % 12; // 0 到 11 循環，超過 11 變回 0
-                    inputElement.value = currentVal;
-                    updateImage(inputElement);
+                    document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">`);
                 }
             </script>
         </div>
 
         <div class="controls">
-            <button onclick="askAI()">請求 AI 最佳解</button>
+            <button onclick="askAI()">AI 最佳解</button>
             <div id="result"></div>
         </div>
     </div>
