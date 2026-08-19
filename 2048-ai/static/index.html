@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2048 AI - 魔幻飲料店專用</title>
+
     <style>
         body { 
             margin: 0; 
@@ -18,12 +19,24 @@
             max-width: 450px; 
             height: 100vh;
             min-height: 850px;
-            background-image: url('image_2.png'); /* 這裡讀取背景圖 */
+            background-image: url('image_2.png');
             background-size: cover;
             background-position: top center;
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+
+        /* 👉 新增：在中間擋住原本遊戲圖片文字的遮罩 (你可以微調 top 和 height 來對準那行字) */
+        .text-cover {
+            position: absolute;
+            top: 500px; /* 遮罩位置 */
+            width: 88%;
+            height: 50px; /* 遮罩高度 */
+            background-color: #532222; /* 配合背景底色遮蓋，或改為 transparent */
+            z-index: 5;
+            pointer-events: none; /* 讓滑鼠可以穿透遮罩直接點擊後方的格子 */
+            opacity: 0.8; /* 調整透明度讓它融進背景 */
         }
 
         .grid { 
@@ -32,7 +45,8 @@
             gap: 2px; 
             width: 88%; 
             background-color: transparent; 
-            margin-top: 260px; /* 這裡可微調方格上下位置 */
+            margin-top: 260px; 
+            z-index: 10; /* 確保格子在遮罩上方 */
         }
 
         .grid input { 
@@ -42,16 +56,16 @@
             font-size: 24px; 
             font-weight: bold; 
             border: none; 
-            background-color: rgba(255, 255, 255, 0.15); 
+            background-color: transparent; /* 保持全透明，露出底圖 */
             color: #fff; 
             text-shadow: 1px 1px 2px black; 
             background-size: cover; 
             background-position: center;
+            cursor: pointer; /* 游標變成手指，提示可以點擊 */
         }
         
-        .grid input:focus { outline: 2px solid #ffcc00; background-color: rgba(0,0,0,0.5); }
+        .grid input:focus { outline: 2px solid #ffcc00; }
         
-        /* 👉 新增：隱藏數字輸入框右側的上下小箭頭 */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -68,6 +82,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
+            z-index: 10;
         }
         button { 
             padding: 12px 30px; 
@@ -86,29 +101,40 @@
 </head>
 <body>
     <div class="phone-screen">
+        <!-- 遮住背景原本文字的區塊 -->
+        <div class="text-cover"></div>
+
         <div class="grid" id="board">
             <script>
                 function updateImage(inputElement) {
-                    let val = inputElement.value;
+                    let val = parseInt(inputElement.value) || 0;
                     if (val > 0) {
                         inputElement.style.backgroundImage = `url('images/${val}.png')`;
                         inputElement.style.color = "transparent"; 
-                        inputElement.style.textShadow = "none"; // 👉 新增：把陰影也關掉，數字才會完全消失
+                        inputElement.style.textShadow = "none"; 
                     } else {
                         inputElement.style.backgroundImage = "none";
                         inputElement.style.color = "#fff"; 
-                        inputElement.style.textShadow = "1px 1px 2px black"; // 恢復數字 0 的陰影
+                        inputElement.style.textShadow = "1px 1px 2px black"; 
                     }
                 }
 
+                // 產生 16 個格子，並加入點擊自動加 1 的功能 (0 -> 1 -> 2 ... -> 11 -> 0)
                 for(let i=0; i<16; i++) {
-                    document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">`);
+                    document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)" onclick="incrementCell(this)">`);
+                }
+
+                function incrementCell(inputElement) {
+                    let currentVal = parseInt(inputElement.value) || 0;
+                    currentVal = (currentVal + 1) % 12; // 0 到 11 循環，超過 11 變回 0
+                    inputElement.value = currentVal;
+                    updateImage(inputElement);
                 }
             </script>
         </div>
 
         <div class="controls">
-            <button onclick="askAI()">AI 最佳解</button>
+            <button onclick="askAI()">請求 AI 最佳解</button>
             <div id="result"></div>
         </div>
     </div>
