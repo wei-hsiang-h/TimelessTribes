@@ -26,7 +26,6 @@
             align-items: center;
         }
 
-        /* 專屬標題 */
         .custom-title {
             position: absolute;
             top: 125px;     
@@ -46,7 +45,6 @@
             box-shadow: inset 0px 2px 5px rgba(0,0,0,0.5); 
         }
 
-        /* 遮住網格背後原本文字的區塊與大外框底色 */
         .grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
@@ -60,9 +58,18 @@
             box-sizing: border-box;
         }
 
-        .grid input { 
-            aspect-ratio: 1 / 1; 
+        /* 👉 新增：格子外包裝，用來定位我們的自訂箭頭 */
+        .cell-wrapper {
+            position: relative;
             width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        .grid input { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
             text-align: center; 
             font-size: 24px; 
             font-weight: bold; 
@@ -76,21 +83,62 @@
             background-size: 70% 70%; 
             background-repeat: no-repeat;
             background-position: center left 15%; 
-            padding-right: 15px; 
+            padding-right: 25px; /* 為了閃避自訂箭頭，把字再往左推一點 */
             box-sizing: border-box;
+            
+            /* 👉 徹底隱藏瀏覽器原生的醜箭頭 */
+            -moz-appearance: textfield; 
         }
         
+        .grid input::-webkit-inner-spin-button, 
+        .grid input::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
         .grid input:focus { 
             outline: 2px solid #ffcc00; 
             background-color: rgba(40, 10, 10, 0.9); 
+            z-index: 1; /* 點擊時外框浮現 */
         }
         
-        /* 保留上下箭頭 */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            opacity: 1; 
-            height: 30px;
+        /* 👉 新增：專為手機與電腦設計的自訂上下箭頭 */
+        .custom-spinner {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 25px; /* 觸控區塊寬度 */
+            display: flex;
+            flex-direction: column;
+            z-index: 2; /* 確保浮在輸入框上層 */
+        }
+
+        .custom-spinner div {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px; 
+            background-color: rgba(0, 0, 0, 0.25); /* 半透明黑底 */
             cursor: pointer;
+            user-select: none; /* 防止連點時選取到文字 */
+        }
+
+        .custom-spinner div:first-child {
+            border-radius: 0 4px 0 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-spinner div:last-child {
+            border-radius: 0 0 4px 0;
+        }
+
+        /* 按下去的發光回饋效果 */
+        .custom-spinner div:active {
+            background-color: rgba(255, 204, 0, 0.8);
+            color: #000;
         }
         
         .controls {
@@ -113,28 +161,26 @@
             border-radius: 25px; 
             font-weight: bold; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            margin-bottom: 10px; /* 跟下方的結果框拉開一點距離 */
+            margin-bottom: 10px; 
         }
         
         button:hover { 
             background-color: #b04848; 
         }
         
-        /* 👉 幫 AI 結果加上深色底框，讓字體超清晰 */
         #result { 
             margin-top: 10px; 
             font-size: 26px; 
             font-weight: bold; 
             color: #fff; 
             text-shadow: 2px 2px 4px #000; 
-            background-color: rgba(43, 37, 55, 0.95); /* 深紫色半透明底，跟標題呼應 */
-            padding: 10px 30px; /* 增加內邊距讓框變大 */
-            border-radius: 25px; /* 圓角藥丸形狀 */
-            border: 2px solid #ffcc00; /* 加上金色邊框看起來更像遊戲提示 */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6); /* 立體陰影 */
+            background-color: rgba(43, 37, 55, 0.95); 
+            padding: 10px 30px; 
+            border-radius: 25px; 
+            border: 2px solid #ffcc00; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6); 
         }
 
-        /* 當沒有文字內容時，自動隱藏底框 */
         #result:empty {
             display: none;
         }
@@ -156,8 +202,30 @@
                     }
                 }
 
+                // 👉 新增：點擊自訂箭頭時，增加或減少數字的功能
+                function changeValue(index, delta) {
+                    let input = document.getElementById(`cell-${index}`);
+                    let currentVal = parseInt(input.value) || 0;
+                    let newVal = currentVal + delta;
+                    
+                    // 確保數字限制在 0 到 11 之間
+                    if (newVal >= 0 && newVal <= 11) {
+                        input.value = newVal;
+                        updateImage(input);
+                    }
+                }
+
+                // 👉 產生 16 個格子，這次包含了我們手刻的自訂箭頭
                 for(let i=0; i<16; i++) {
-                    document.write(`<input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">`);
+                    document.write(`
+                    <div class="cell-wrapper">
+                        <input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">
+                        <div class="custom-spinner">
+                            <div onclick="changeValue(${i}, 1)">▲</div>
+                            <div onclick="changeValue(${i}, -1)">▼</div>
+                        </div>
+                    </div>
+                    `);
                 }
             </script>
         </div>
