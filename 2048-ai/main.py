@@ -20,6 +20,7 @@ app.add_middleware(
 lib_path = os.path.join(os.path.dirname(__file__), 'ai_core', '2048.so')
 if os.path.exists(lib_path):
     lib = ctypes.CDLL(lib_path)
+    lib.init_tables()
     lib.find_best_move.argtypes = [ctypes.c_uint64]
     lib.find_best_move.restype = ctypes.c_int
 else:
