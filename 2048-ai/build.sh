@@ -10,5 +10,5 @@ fi
 
 # 3. 進入資料夾並編譯 C++ 程式碼 (產出 2048.so)
 cd ai_core
-make
+g++ -O3 -shared -fPIC 2048.cpp -o 2048.so
 cd ..
