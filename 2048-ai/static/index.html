@@ -58,7 +58,6 @@
             box-sizing: border-box;
         }
 
-        /* 👉 新增：格子外包裝，用來定位我們的自訂箭頭 */
         .cell-wrapper {
             position: relative;
             width: 100%;
@@ -83,10 +82,9 @@
             background-size: 70% 70%; 
             background-repeat: no-repeat;
             background-position: center left 15%; 
-            padding-right: 25px; /* 為了閃避自訂箭頭，把字再往左推一點 */
+            padding-right: 25px; 
             box-sizing: border-box;
             
-            /* 👉 徹底隱藏瀏覽器原生的醜箭頭 */
             -moz-appearance: textfield; 
         }
         
@@ -99,19 +97,18 @@
         .grid input:focus { 
             outline: 2px solid #ffcc00; 
             background-color: rgba(40, 10, 10, 0.9); 
-            z-index: 1; /* 點擊時外框浮現 */
+            z-index: 1; 
         }
         
-        /* 👉 新增：專為手機與電腦設計的自訂上下箭頭 */
         .custom-spinner {
             position: absolute;
             right: 0;
             top: 0;
             height: 100%;
-            width: 25px; /* 觸控區塊寬度 */
+            width: 25px; 
             display: flex;
             flex-direction: column;
-            z-index: 2; /* 確保浮在輸入框上層 */
+            z-index: 2; 
         }
 
         .custom-spinner div {
@@ -121,9 +118,9 @@
             justify-content: center;
             color: rgba(255, 255, 255, 0.8);
             font-size: 12px; 
-            background-color: rgba(0, 0, 0, 0.25); /* 半透明黑底 */
+            background-color: rgba(0, 0, 0, 0.25); 
             cursor: pointer;
-            user-select: none; /* 防止連點時選取到文字 */
+            user-select: none; 
         }
 
         .custom-spinner div:first-child {
@@ -135,7 +132,6 @@
             border-radius: 0 0 4px 0;
         }
 
-        /* 按下去的發光回饋效果 */
         .custom-spinner div:active {
             background-color: rgba(255, 204, 0, 0.8);
             color: #000;
@@ -143,15 +139,52 @@
         
         .controls {
             margin-top: auto; 
-            margin-bottom: 40px;
+            margin-bottom: 25px;
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
             z-index: 10;
         }
+
+        /* 👉 新增：十字方向鍵 UI 樣式 */
+        .d-pad {
+            display: grid;
+            grid-template-columns: 50px 50px 50px;
+            grid-template-rows: 50px 50px;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
         
-        button { 
+        .d-pad button {
+            padding: 0;
+            margin: 0;
+            font-size: 20px;
+            background-color: #4c2222;
+            border: 2px solid #ffcc00;
+            border-radius: 8px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .d-pad button:active {
+            background-color: #ffcc00;
+            color: black;
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        
+        /* 將原本的按鈕獨立命名，避免被方向鍵吃掉樣式 */
+        .ai-btn { 
             padding: 12px 30px; 
             font-size: 20px; 
             cursor: pointer; 
@@ -164,7 +197,7 @@
             margin-bottom: 10px; 
         }
         
-        button:hover { 
+        .ai-btn:hover { 
             background-color: #b04848; 
         }
         
@@ -202,20 +235,17 @@
                     }
                 }
 
-                // 👉 新增：點擊自訂箭頭時，增加或減少數字的功能
                 function changeValue(index, delta) {
                     let input = document.getElementById(`cell-${index}`);
                     let currentVal = parseInt(input.value) || 0;
                     let newVal = currentVal + delta;
                     
-                    // 確保數字限制在 0 到 11 之間
                     if (newVal >= 0 && newVal <= 11) {
                         input.value = newVal;
                         updateImage(input);
                     }
                 }
 
-                // 👉 產生 16 個格子，這次包含了我們手刻的自訂箭頭
                 for(let i=0; i<16; i++) {
                     document.write(`
                     <div class="cell-wrapper">
@@ -231,31 +261,110 @@
         </div>
 
         <div class="controls">
-            <button onclick="askAI()">請求 AI 最佳解</button>
+            <!-- 👉 新增：畫面上的十字方向鍵 -->
+            <div class="d-pad">
+                <button class="btn-up" onclick="moveBoard('up')">⬆️</button>
+                <button class="btn-left" onclick="moveBoard('left')">⬅️</button>
+                <button class="btn-down" onclick="moveBoard('down')">⬇️</button>
+                <button class="btn-right" onclick="moveBoard('right')">➡️</button>
+            </div>
+
+            <button class="ai-btn" onclick="askAI()">請求 AI 最佳解</button>
             <div id="result"></div>
         </div>
     </div>
 
     <script>
-        async function askAI() {
-            document.getElementById("result").innerText = "計算中...";
-            
-            let boardArray = [];
+        // 👉 新增：擷取盤面陣列
+        function getBoard() {
+            let board = [];
             for (let r = 0; r < 4; r++) {
                 let row = [];
                 for (let c = 0; c < 4; c++) {
-                    let power = parseInt(document.getElementById(`cell-${r*4+c}`).value) || 0;
-                    let realValue = (power === 0) ? 0 : Math.pow(2, power);
-                    row.push(realValue);
+                    row.push(parseInt(document.getElementById(`cell-${r*4+c}`).value) || 0);
                 }
-                boardArray.push(row);
+                board.push(row);
             }
+            return board;
+        }
+
+        // 👉 新增：更新盤面陣列回畫面
+        function setBoard(board) {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    let el = document.getElementById(`cell-${r*4+c}`);
+                    el.value = board[r][c];
+                    updateImage(el);
+                }
+            }
+        }
+
+        // 👉 新增：2048 滑動與合成邏輯 (遵守 11 不能合成的規則)
+        function slideAndMerge(line) {
+            let arr = line.filter(val => val > 0);
+            for (let i = 0; i < arr.length - 1; i++) {
+                if (arr[i] === arr[i+1] && arr[i] < 11) {
+                    arr[i]++;
+                    arr.splice(i+1, 1);
+                }
+            }
+            while (arr.length < 4) {
+                arr.push(0);
+            }
+            return arr;
+        }
+
+        // 👉 新增：控制盤面方向滑動
+        function moveBoard(direction) {
+            let board = getBoard();
+            
+            if (direction === 'left' || direction === 'right') {
+                for (let r = 0; r < 4; r++) {
+                    let row = board[r];
+                    if (direction === 'right') row.reverse();
+                    row = slideAndMerge(row);
+                    if (direction === 'right') row.reverse();
+                    board[r] = row;
+                }
+            } else if (direction === 'up' || direction === 'down') {
+                for (let c = 0; c < 4; c++) {
+                    let col = [board[0][c], board[1][c], board[2][c], board[3][c]];
+                    if (direction === 'down') col.reverse();
+                    col = slideAndMerge(col);
+                    if (direction === 'down') col.reverse();
+                    for (let r = 0; r < 4; r++) {
+                        board[r][c] = col[r];
+                    }
+                }
+            }
+            setBoard(board);
+        }
+
+        // 👉 新增：實體鍵盤的上下左右監聽器
+        document.addEventListener('keydown', function(e) {
+            // 如果點進輸入框正在打字，就不觸發全域快捷鍵
+            if (document.activeElement.tagName === 'INPUT') return;
+
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { moveBoard('up'); e.preventDefault(); }
+            else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { moveBoard('down'); e.preventDefault(); }
+            else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { moveBoard('left'); e.preventDefault(); }
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { moveBoard('right'); e.preventDefault(); }
+        });
+
+        async function askAI() {
+            document.getElementById("result").innerText = "計算中...";
+            
+            // 這裡改成共用 getBoard()，讓程式碼更簡潔
+            let boardArray = getBoard();
+            let realBoard = boardArray.map(row => 
+                row.map(power => (power === 0) ? 0 : Math.pow(2, power))
+            );
 
             try {
                 const response = await fetch("/api/get_best_move", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ board: boardArray })
+                    body: JSON.stringify({ board: realBoard })
                 });
                 
                 const data = await response.json();
