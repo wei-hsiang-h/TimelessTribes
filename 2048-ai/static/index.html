@@ -147,7 +147,6 @@
             z-index: 10;
         }
 
-        /* 👉 新增：十字方向鍵 UI 樣式 */
         .d-pad {
             display: grid;
             grid-template-columns: 50px 50px 50px;
@@ -183,9 +182,32 @@
         .btn-down { grid-column: 2; grid-row: 2; }
         .btn-right { grid-column: 3; grid-row: 2; }
         
-        /* 將原本的按鈕獨立命名，避免被方向鍵吃掉樣式 */
+        /* 👉 新增：按鈕群組，讓上一步跟 AI 計算按鈕並排 */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        /* 👉 新增：上一步按鈕樣式 (配合標題的深紫色) */
+        .undo-btn {
+            padding: 12px 20px; 
+            font-size: 20px; 
+            cursor: pointer; 
+            background-color: #534b62; 
+            color: white; 
+            border: 2px solid #fff; 
+            border-radius: 25px; 
+            font-weight: bold; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .undo-btn:hover {
+            background-color: #3e3749;
+        }
+
         .ai-btn { 
-            padding: 12px 30px; 
+            padding: 12px 20px; 
             font-size: 20px; 
             cursor: pointer; 
             background-color: #d15a5a; 
@@ -194,7 +216,6 @@
             border-radius: 25px; 
             font-weight: bold; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            margin-bottom: 10px; 
         }
         
         .ai-btn:hover { 
@@ -226,6 +247,19 @@
 
         <div class="grid" id="board">
             <script>
+                // 👉 新增：儲存盤面歷史紀錄的陣列 (最多記 50 步)
+                let boardHistory = [];
+
+                let autoTimer = null;
+                function autoAskAI() {
+                    if (autoTimer) clearTimeout(autoTimer);
+                    autoTimer = setTimeout(() => {
+                        if (typeof askAI === 'function') {
+                            askAI();
+                        }
+                    }, 800);
+                }
+
                 function updateImage(inputElement) {
                     let val = parseInt(inputElement.value) || 0;
                     if (val >= 1 && val <= 11) {
@@ -235,21 +269,48 @@
                     }
                 }
 
+                // 👉 新增：儲存當前狀態到歷史紀錄
+                function saveState(boardToSave = null) {
+                    let currentBoard = boardToSave || getBoard();
+                    let currentBoardStr = JSON.stringify(currentBoard);
+                    let lastHistoryStr = boardHistory.length > 0 ? JSON.stringify(boardHistory[boardHistory.length - 1]) : "";
+                    
+                    // 只有當盤面真的有改變時，才存入紀錄，避免重複
+                    if (currentBoardStr !== lastHistoryStr) {
+                        boardHistory.push(JSON.parse(currentBoardStr));
+                        if (boardHistory.length > 50) boardHistory.shift(); 
+                    }
+                }
+
+                // 👉 新增：復原上一步
+                function undoMove() {
+                    if (boardHistory.length > 0) {
+                        let prevState = boardHistory.pop();
+                        setBoard(prevState);
+                        autoAskAI(); // 復原後自動重新計算 AI
+                    } else {
+                        alert("已經退到最前面囉！");
+                    }
+                }
+
                 function changeValue(index, delta) {
                     let input = document.getElementById(`cell-${index}`);
                     let currentVal = parseInt(input.value) || 0;
                     let newVal = currentVal + delta;
                     
                     if (newVal >= 0 && newVal <= 11) {
+                        saveState(); // 👉 改變數字前，存入歷史紀錄
                         input.value = newVal;
                         updateImage(input);
+                        autoAskAI();
                     }
                 }
 
                 for(let i=0; i<16; i++) {
                     document.write(`
                     <div class="cell-wrapper">
-                        <input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" oninput="updateImage(this)">
+                        <!-- 👉 focus 時儲存原始狀態，防止打錯字無法復原 -->
+                        <input type="number" id="cell-${i}" value="0" min="0" max="11" step="1" onfocus="saveState()" oninput="updateImage(this); autoAskAI();">
                         <div class="custom-spinner">
                             <div onclick="changeValue(${i}, 1)">▲</div>
                             <div onclick="changeValue(${i}, -1)">▼</div>
@@ -261,7 +322,6 @@
         </div>
 
         <div class="controls">
-            <!-- 👉 新增：畫面上的十字方向鍵 -->
             <div class="d-pad">
                 <button class="btn-up" onclick="moveBoard('up')">⬆️</button>
                 <button class="btn-left" onclick="moveBoard('left')">⬅️</button>
@@ -269,13 +329,17 @@
                 <button class="btn-right" onclick="moveBoard('right')">➡️</button>
             </div>
 
-            <button class="ai-btn" onclick="askAI()">請求 AI 最佳解</button>
+            <!-- 👉 新增：按鈕群組，包含「上一步」與「請求 AI」 -->
+            <div class="action-buttons">
+                <button class="undo-btn" onclick="undoMove()">↩️ 上一步</button>
+                <button class="ai-btn" onclick="askAI()">請求 AI 最佳解</button>
+            </div>
+            
             <div id="result"></div>
         </div>
     </div>
 
     <script>
-        // 👉 新增：擷取盤面陣列
         function getBoard() {
             let board = [];
             for (let r = 0; r < 4; r++) {
@@ -288,7 +352,6 @@
             return board;
         }
 
-        // 👉 新增：更新盤面陣列回畫面
         function setBoard(board) {
             for (let r = 0; r < 4; r++) {
                 for (let c = 0; c < 4; c++) {
@@ -299,7 +362,6 @@
             }
         }
 
-        // 👉 新增：2048 滑動與合成邏輯 (遵守 11 不能合成的規則)
         function slideAndMerge(line) {
             let arr = line.filter(val => val > 0);
             for (let i = 0; i < arr.length - 1; i++) {
@@ -314,9 +376,9 @@
             return arr;
         }
 
-        // 👉 新增：控制盤面方向滑動
         function moveBoard(direction) {
             let board = getBoard();
+            let originalBoardStr = JSON.stringify(board); // 記下移動前的狀態
             
             if (direction === 'left' || direction === 'right') {
                 for (let r = 0; r < 4; r++) {
@@ -337,13 +399,15 @@
                     }
                 }
             }
-            setBoard(board);
-            askAI()
+            
+            // 👉 如果盤面真的有被滑動改變，就把「移動前」的狀態存起來
+            if (originalBoardStr !== JSON.stringify(board)) {
+                saveState(JSON.parse(originalBoardStr)); 
+                setBoard(board);
+            }
         }
 
-        // 👉 新增：實體鍵盤的上下左右監聽器
         document.addEventListener('keydown', function(e) {
-            // 如果點進輸入框正在打字，就不觸發全域快捷鍵
             if (document.activeElement.tagName === 'INPUT') return;
 
             if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { moveBoard('up'); e.preventDefault(); }
@@ -353,9 +417,9 @@
         });
 
         async function askAI() {
+            document.getElementById("result").style.display = "block"; // 確保結果框顯示
             document.getElementById("result").innerText = "計算中...";
             
-            // 這裡改成共用 getBoard()，讓程式碼更簡潔
             let boardArray = getBoard();
             let realBoard = boardArray.map(row => 
                 row.map(power => (power === 0) ? 0 : Math.pow(2, power))
